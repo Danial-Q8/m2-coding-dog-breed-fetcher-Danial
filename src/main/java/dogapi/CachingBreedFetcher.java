@@ -1,5 +1,6 @@
 package dogapi;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -14,15 +15,30 @@ import java.util.*;
  */
 public class CachingBreedFetcher implements BreedFetcher {
     // TODO Task 2: Complete this class
+    private final BreedFetcher fetcher;
+    private final Map<String, List<String>> cache = new HashMap<>();
     private int callsMade = 0;
     public CachingBreedFetcher(BreedFetcher fetcher) {
-
+        this.fetcher = Objects.requireNonNull(fetcher, "fetcher must not be null");
     }
-
+    private static String normalize(String breed) {
+        return breed == null ? "null" : breed.trim().toLowerCase(Locale.ROOT);
+    }
     @Override
-    public List<String> getSubBreeds(String breed) {
-        // return statement included so that the starter code can compile and run.
-        return new ArrayList<>();
+    public List<String> getSubBreeds(String breed) throws BreedNotFoundException {
+
+        final String key = normalize(breed);
+
+        List<String> cached = cache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+
+        callsMade++;
+        List<String> result = fetcher.getSubBreeds(breed);
+        List<String> toCache = List.copyOf(result);
+        cache.put(key, toCache);
+        return toCache;
     }
 
     public int getCallsMade() {
